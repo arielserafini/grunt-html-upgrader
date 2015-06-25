@@ -12,6 +12,14 @@ module.exports = {
       return false;
     }
 
+    //input.replace(/<%((.|\s)*?)%>/g, function(match, subMatch){ return "<!-- <%"+subMatch+"%> -->" });
+    var ejsCache = [];
+    input = input.replace(/<%(.*?)%>/g, function (match) {
+      ejsCache.push(match);
+      return 'cachedejsstart' + (ejsCache.length-1) + 'cachedejsend';
+    });
+    
+
     var $ = cheerio.load(input);
     var results = [];
     var rules = require('./upgraders/' + type + '.js');
@@ -28,10 +36,16 @@ module.exports = {
 
     var html = $.html();
 
+    //html.replace(/<!-- <%((.|\s)*?)%> -->/g, (match, subMatch){ return "<%"+subMatch+"%>"});
+    html = html.replace(/cachedejsstart(\d*)cachedejsend/g,function (match, num) {
+      return ejsCache[parseInt(num)];
+    });
+
     html = html.replace(/&apos;/g, "'"); // ' fix
     html = html.replace(/&amp;&amp;/g, "&&"); // && fix
     html = html.replace(/&gt;/g, ">"); // > fix
     html = html.replace(/&lt;/g, "<"); // < fix
+
 
     return html;
   }
